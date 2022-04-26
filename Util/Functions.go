@@ -8,6 +8,10 @@ import (
 	"os"
 )
 
+func ErrorMsg(text string) {
+	fmt.Printf("\033[31m>> Error: %s\033[0m\r\n", text)
+}
+
 func CalcSize(size int, unit string) int {
 	if unit == "b" {
 		return size
@@ -22,7 +26,7 @@ func ReadBytes(file *os.File, number int) []byte {
 	bytes := make([]byte, number)
 	_, err := file.Read(bytes)
 	if err != nil {
-		fmt.Println(err.Error())
+		ErrorMsg(err.Error())
 	}
 	return bytes
 }
@@ -32,7 +36,7 @@ func StructToBytes(s interface{}) []byte {
 	encoder := gob.NewEncoder(&buffer)
 	err := encoder.Encode(s)
 	if err != nil && err != io.EOF {
-		fmt.Println(err.Error())
+		ErrorMsg(err.Error())
 	}
 	return buffer.Bytes()
 }
@@ -42,7 +46,7 @@ func BytesToMBR(b []byte) MBR {
 	decoder := gob.NewDecoder(bytes.NewReader(b))
 	err := decoder.Decode(&m)
 	if err != nil && err != io.EOF {
-		fmt.Println(err.Error())
+		ErrorMsg(err.Error())
 	}
 	return m
 }

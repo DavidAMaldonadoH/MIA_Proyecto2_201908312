@@ -62,13 +62,13 @@ func (mkdisk *Mkdisk) Execute() interface{} {
 		if len(dir) > 0 {
 			if _, err2 := os.Stat(path); os.IsNotExist(err2) {
 				if err3 := os.MkdirAll(dir, os.ModePerm); err3 != nil {
-					fmt.Println(err3.Error())
+					util.ErrorMsg(err3.Error())
 				}
 			}
 		}
 		createDisk(size, fit, unit, path)
 	} else {
-		fmt.Println("Error: Parametros incorrectos en el comando Mkdisk")
+		util.ErrorMsg("Parámetros incorrectos en el comando Mkdisk")
 	}
 
 	return nil
@@ -94,13 +94,13 @@ func createDisk(size int, fit string, unit string, path string) {
 			disk, err := os.Create(path)
 
 			if err != nil {
-				fmt.Println(err.Error())
+				util.ErrorMsg(err.Error())
 			}
 
 			for i := 0; i < korm; i++ {
 				_, err := disk.Write(buffer)
 				if err != nil {
-					fmt.Println(err.Error())
+					util.ErrorMsg(err.Error())
 				}
 			}
 
@@ -110,22 +110,22 @@ func createDisk(size int, fit string, unit string, path string) {
 			pos, err := disk.Seek(0, io.SeekStart)
 
 			if err != nil {
-				fmt.Println(err.Error())
+				util.ErrorMsg(err.Error())
 			}
 
 			_, err2 := disk.WriteAt(mbr_bytes, pos)
-			
+
 			if err2 != nil {
-				fmt.Println(err2.Error())
+				util.ErrorMsg(err.Error())
 			}
 
 			disk.Close()
 			fmt.Printf("> mkdisk en: %s realizado con exito\n", path)
 
 		} else {
-			fmt.Println("> La unidad escogida no es permitida para crear un disco!")
+			util.ErrorMsg("La unidad escogida no es permitida para crear un disco!")
 		}
 	} else {
-		fmt.Println("> Ya existe un disco en este directorio!")
+		util.ErrorMsg("Ya existe un disco en este directorio!")
 	}
 }

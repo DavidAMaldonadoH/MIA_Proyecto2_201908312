@@ -21,7 +21,7 @@ func NewMBR(tamano int64, fit byte) *MBR {
 	var time_bytes [10]byte
 	copy(time_bytes[:], time)
 	// obtener firma
-	random := rand.Intn(100)
+	random := rand.Intn(501)
 	// particiones
 	partitions := make([]Partition, 4)
 
@@ -37,4 +37,11 @@ func (m *MBR) PrintInfo() {
 		fmt.Printf("Partition %d:\n", i)
 		p.PrintInfo()
 	}
+}
+
+func (m *MBR) PrintInfo2() {
+	fmt.Printf("Size: %d\n", m.Tamano)
+	fmt.Printf("Time: %s\n", string(m.Fecha[:]))
+	fmt.Printf("Signature: %d\n", m.Signatue)
+	fmt.Printf("Fit: %s\n", string(m.Fit))
 }

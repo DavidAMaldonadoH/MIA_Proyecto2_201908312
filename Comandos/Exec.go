@@ -2,7 +2,6 @@ package comandos
 
 import (
 	util "Proyecto2/Util"
-	"fmt"
 )
 
 type Exec struct {
@@ -19,10 +18,10 @@ func (exec *Exec) Execute() interface{} {
 		if exec.Parameters[0].Key == "path" {
 			return exec.Parameters[0].Value.(string)
 		} else {
-			fmt.Println(">> Error el comando exec recibio un parametro no permitido!")
+			util.ErrorMsg("El comando exec recibió un parámetro no permitido!")
 		}
 	} else {
-		fmt.Println(">> Error el comando exec recibio mas parametros de los permitidos!")
+		util.ErrorMsg("El comando exec recibió mas parámetros de los permitidos!")
 	}
 	return ""
 }

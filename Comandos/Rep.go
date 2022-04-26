@@ -4,7 +4,6 @@ import (
 	util "Proyecto2/Util"
 	"fmt"
 	"os"
-	"unsafe"
 )
 
 type Rep struct {
@@ -38,14 +37,11 @@ func reportar(path string) {
 
 	defer disk.Close()
 
-	mbr := util.MBR{}
-	var size int64 = int64(unsafe.Sizeof(mbr))
-	mbr_bytes := util.ReadBytes(disk, int(size))
+	// leer los bytes del mbr
+	mbr_bytes := util.ReadBytes(disk, 383)
 
-	if err != nil {
-		fmt.Println(err.Error())
-	}
+	// Conversion de bytes a struct
+	mbr := util.BytesToMBR(mbr_bytes)
+	mbr.PrintInfo2()
 
-	mbr = util.BytesToMBR(mbr_bytes)
-	mbr.PrintInfo()
 }
