@@ -2,7 +2,10 @@ package comandos
 
 import (
 	util "Proyecto2/Util"
+	"bufio"
 	"fmt"
+	"os"
+	"strconv"
 )
 
 type Rmdisk struct {
@@ -15,6 +18,47 @@ func NewRmdisk(parameters []util.Parameter) *Rmdisk {
 }
 
 func (rmdisk *Rmdisk) Execute() interface{} {
-	fmt.Println("Comando Rmdisk")
+	// verificar parametros
+	if len(rmdisk.Parameters) == 1 {
+		if rmdisk.Parameters[0].Key == "path" {
+			removeDisk(rmdisk.Parameters[0].Value.(string))
+		} else {
+			fmt.Println(">> Error el comando rmdisk recibio un parametro no permitido!")
+		}
+	} else {
+		fmt.Println(">> Error el comando rmdisk recibio mas parametros de los permitidos!")
+	}
+
 	return nil
+}
+
+func removeDisk(path string) {
+	if _, err := os.Stat(path); os.IsNotExist(err) { // si el disco no existe
+		fmt.Println("> No existe el disco ingresado!")
+	} else {
+		// preguntar al usuario si esta seguro de eliminar el disco
+		fmt.Printf("Esta seguro de eliminar el disco: %s \n", path)
+		fmt.Println("1. Si\n2. No")
+		scanner := bufio.NewScanner(os.Stdin)
+		fmt.Print("> Ingrese una opción: ")
+		scanner.Scan()
+		input, err := strconv.ParseInt(scanner.Text(), 10, 64)
+
+		if err != nil {
+			fmt.Println("> Error: La opción ingresada es incorrecta!")
+		} else {
+			if input == 1 {
+				e := os.Remove(path)
+				if e != nil {
+					fmt.Println("> Error: No se ha podido eliminar el disco!")
+				} else {
+					fmt.Printf("> Se ha eliminado el disco: %q con éxito!\n", path)
+				}
+			} else if input == 2 {
+				fmt.Println("> No se eliminara el disco seleccionado.")
+			} else {
+				fmt.Println("> Error: La opción ingresada es incorrecta!")
+			}
+		}
+	}
 }
