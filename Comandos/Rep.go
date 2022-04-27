@@ -16,20 +16,42 @@ func NewRep(parameters []util.Parameter) *Rep {
 }
 
 func (rep *Rep) Execute() interface{} {
-	if len(rep.Parameters) == 1 {
-		if rep.Parameters[0].Key == "path" {
-			reportar(rep.Parameters[0].Value.(string))
+	// parametros
+	path := ""
+	name := ""
+	id := ""
+	ruta := ""
+	err := false
+	// verificar parametros
+	for _, p := range rep.Parameters {
+		if p.Key == "path" {
+			path = p.Value.(string)
+		} else if p.Key == "name" {
+			name = p.Value.(string)
+		} else if p.Key == "id" {
+			id = p.Value.(string)
+		} else if p.Key == "ruta" {
+			ruta = p.Value.(string)
 		} else {
-			fmt.Println(">> Error el comando rep recibio un parametro no permitido!")
+			err = true
+			break
 		}
+	}
+
+	if path == "" || name == "" || id == "" || ruta == "" {
+		err = true
+	}
+
+	if !err {
+		reportar(path, name, id, ruta)
 	} else {
-		fmt.Println(">> Error el comando rep recibio mas parametros de los permitidos!")
+		util.ErrorMsg("Parámetros incorrectos en el comando rep")
 	}
 
 	return nil
 }
 
-func reportar(path string) {
+func reportar(path, name, id, ruta string) {
 	disk, err := os.OpenFile(path, os.O_RDWR, 0660)
 	if err != nil {
 		fmt.Println(err.Error())

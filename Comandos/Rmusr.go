@@ -15,6 +15,18 @@ func NewRmusr(parameters []util.Parameter) *Rmusr {
 }
 
 func (rmusr *Rmusr) Execute() interface{} {
-	fmt.Println("Comando Rmusr")
+	if len(rmusr.Parameters) == 1 {
+		if rmusr.Parameters[0].Key == "usuario" {
+			removeUser(rmusr.Parameters[0].Value.(string))
+		} else {
+			util.ErrorMsg("El comando rmusr recibió un parámetro no permitido!")
+		}
+	} else {
+		util.ErrorMsg("El comando rmusr recibió mas parámetros de los permitidos!")
+	}
 	return nil
+}
+
+func removeUser(usuario string) {
+	fmt.Println(usuario)
 }

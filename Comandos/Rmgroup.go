@@ -15,6 +15,18 @@ func NewRmgroup(parameters []util.Parameter) *Rmgroup {
 }
 
 func (rmgroup *Rmgroup) Execute() interface{} {
-	fmt.Println("Comando Rmgroup")
+	if len(rmgroup.Parameters) == 1 {
+		if rmgroup.Parameters[0].Key == "name" {
+			removeGroup(rmgroup.Parameters[0].Value.(string))
+		} else {
+			util.ErrorMsg("El comando rmgroup recibió un parámetro no permitido!")
+		}
+	} else {
+		util.ErrorMsg("El comando rmgroup recibió mas parámetros de los permitidos!")
+	}
 	return nil
+}
+
+func removeGroup(name string) {
+	fmt.Println(name)
 }
