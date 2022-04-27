@@ -86,6 +86,7 @@ param returns [ util.Parameter p ]
     | '-' PWD '=' texto { $p = util.NewParameter("pwd", $texto.val, true) }
     | '-' GRP '=' texto { $p = util.NewParameter("grp", $texto.val, true) }
     | '-' RP { $p = util.NewParameter("r", nil, false) }
+    | '-' PP { $p = util.NewParameter("p", nil, false) }
     | '-' CONT '=' texto { $p = util.NewParameter("cont", $texto.val, false) }
     | '-' RUTA '=' texto { $p = util.NewParameter("ruta", $texto.val, false) }
 	;
@@ -121,6 +122,7 @@ PASSWORD: P A S S W O R D;
 PWD: P W D;
 GRP: G R P;
 RP: R;
+PP: P;
 CONT: C O N T;
 RUTA: R U T A;
 
@@ -141,7 +143,7 @@ FULL:       F U L L;
 ENTERO: '-'?[0-9]+;
 STRING: '"'~["]*'"';
 ID: ([a-zA-Z]|[0-9]|'_')+;
-DIR: ('/'~["|\n]+)+;
+DIR: ('/'~["| ]+)+;
 COMS: '#' .*? '\n' -> skip; // comentario una línea
 COMD: '#*' .*? '*#' -> skip; // comentario multiple líneas
 WS: [ \r\n\t]+ -> skip; // espacios
