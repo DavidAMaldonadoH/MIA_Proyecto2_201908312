@@ -3,21 +3,22 @@ package util
 import "fmt"
 
 type Partition struct {
+	Name   [16]byte
 	Status byte
 	Type   byte
 	Fit    byte
+	_      [5]byte
 	Start  int64
 	Size   int64
-	Name   [25]byte
 }
 
-func NewPartition(tipo, fit byte, start, size int64, name string) *Partition {
-	var name_bytes [25]byte
-	copy(name_bytes[:], name)
-	return &Partition{Status: byte("0"[0]), Type: tipo, Fit: fit, Start: start, Size: size, Name: name_bytes}
+func NewPartition() Partition {
+	var name_bytes [16]byte
+	copy(name_bytes[:], "")
+	return Partition{Status: '0', Type: 'p', Fit: 'w', Start: -1, Size: 0, Name: name_bytes}
 }
 
-func (p *Partition) PrintInfo() {
+func (p Partition) PrintInfo() {
 	fmt.Printf("Status: %s\n", string(p.Status))
 	fmt.Printf("Type: %s\n", string(p.Type))
 	fmt.Printf("Fit: %s\n", string(p.Fit))

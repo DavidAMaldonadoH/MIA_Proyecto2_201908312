@@ -2,6 +2,8 @@ package comandos
 
 import (
 	util "Proyecto2/Util"
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"os"
@@ -104,19 +106,21 @@ func createDisk(size int, fit string, unit string, path string) {
 				}
 			}
 
-			// ecribir mbr
-			mbr := util.NewMBR(int64(totalSize), byte(fit[0]))
-			mbr_bytes := util.StructToBytes(mbr)
 			pos, err := disk.Seek(0, io.SeekStart)
 
 			if err != nil {
 				util.ErrorMsg(err.Error())
 			}
 
-			_, err2 := disk.WriteAt(mbr_bytes, pos)
+			// ecribir mbr
+			var buffer_bytes bytes.Buffer
+			mbr := util.NewMBR(int64(totalSize), byte(fit[0]))
+			binary.Write(&buffer_bytes, binary.BigEndian, &mbr)
+
+			_, err2 := disk.WriteAt(buffer_bytes.Bytes(), pos)
 
 			if err2 != nil {
-				util.ErrorMsg(err.Error())
+				util.ErrorMsg(err2.Error())
 			}
 
 			disk.Close()

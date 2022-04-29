@@ -2,8 +2,11 @@ package comandos
 
 import (
 	util "Proyecto2/Util"
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"os"
+	"unsafe"
 )
 
 type Rep struct {
@@ -52,18 +55,25 @@ func (rep *Rep) Execute() interface{} {
 }
 
 func reportar(path, name, id, ruta string) {
-	disk, err := os.OpenFile(path, os.O_RDWR, 0660)
+	disk, err := os.OpenFile(path, os.O_RDWR, 0777)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
 	defer disk.Close()
 
-	// leer los bytes del mbr
-	mbr_bytes := util.ReadBytes(disk, 383)
+	// posicionarse al inicio del archivo
+	disk.Seek(0, 0)
+	// crear y obtener el tamano del mbr
+	mbr := util.MBR{}
+	size_mbr := unsafe.Sizeof(mbr)
+	// leer del archivo y pasarlo al mbr
+	data := util.ReadBytes(disk, int(size_mbr))
+	buffer := bytes.NewBuffer(data)
+	err = binary.Read(buffer, binary.BigEndian, &mbr)
+	if err != nil {
+		util.ErrorMsg(err.Error())
+	}
 
-	// Conversion de bytes a struct
-	mbr := util.BytesToMBR(mbr_bytes)
-	mbr.PrintInfo2()
-
+	//mbr.PrintInfo()
 }

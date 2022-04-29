@@ -24,10 +24,12 @@ func CalcSize(size int, unit string) int {
 
 func ReadBytes(file *os.File, number int) []byte {
 	bytes := make([]byte, number)
+
 	_, err := file.Read(bytes)
 	if err != nil {
 		ErrorMsg(err.Error())
 	}
+
 	return bytes
 }
 
@@ -49,4 +51,15 @@ func BytesToMBR(b []byte) MBR {
 		ErrorMsg(err.Error())
 	}
 	return m
+}
+
+func UsedName(name string, names []string) bool {
+	var name_bytes [16]byte
+	copy(name_bytes[:], name)
+	for _, n := range names {
+		if string(name_bytes[:]) == n {
+			return true
+		}
+	}
+	return false
 }
