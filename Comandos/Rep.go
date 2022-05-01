@@ -2,11 +2,8 @@ package comandos
 
 import (
 	util "Proyecto2/Util"
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"os"
-	"unsafe"
 )
 
 type Rep struct {
@@ -62,18 +59,7 @@ func reportar(path, name, id, ruta string) {
 
 	defer disk.Close()
 
-	// posicionarse al inicio del archivo
-	disk.Seek(0, 0)
-	// crear y obtener el tamano del mbr
-	mbr := util.MBR{}
-	size_mbr := unsafe.Sizeof(mbr)
-	// leer del archivo y pasarlo al mbr
-	data := util.ReadBytes(disk, int(size_mbr))
-	buffer := bytes.NewBuffer(data)
-	err = binary.Read(buffer, binary.BigEndian, &mbr)
-	if err != nil {
-		util.ErrorMsg(err.Error())
-	}
+	mbr := util.ReadMbr(disk)
 
-	//mbr.PrintInfo()
+	mbr.PrintInfo()
 }

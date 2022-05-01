@@ -2,9 +2,6 @@ package comandos
 
 import (
 	util "Proyecto2/Util"
-	"bytes"
-	"encoding/binary"
-	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -112,20 +109,13 @@ func createDisk(size int, fit string, unit string, path string) {
 				util.ErrorMsg(err.Error())
 			}
 
-			// ecribir mbr
-			var buffer_bytes bytes.Buffer
 			mbr := util.NewMBR(int64(totalSize), byte(fit[0]))
-			binary.Write(&buffer_bytes, binary.BigEndian, &mbr)
-
-			_, err2 := disk.WriteAt(buffer_bytes.Bytes(), pos)
-
-			if err2 != nil {
-				util.ErrorMsg(err2.Error())
-			}
+			// ecribir mbr
+			util.WriteMbr(disk, mbr, pos)
 
 			disk.Close()
-			fmt.Printf("> mkdisk en: %s realizado con exito\n", path)
-
+			msg := "mkdisk en: " + path + " realizado con éxito"
+			util.SuccessMsg(msg)
 		} else {
 			util.ErrorMsg("La unidad escogida no es permitida para crear un disco!")
 		}

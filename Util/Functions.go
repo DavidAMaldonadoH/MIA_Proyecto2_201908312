@@ -2,14 +2,22 @@ package util
 
 import (
 	"bytes"
-	"encoding/gob"
+	"encoding/binary"
 	"fmt"
-	"io"
 	"os"
+	"unsafe"
 )
 
 func ErrorMsg(text string) {
 	fmt.Printf("\033[31m>> Error: %s\033[0m\r\n", text)
+}
+
+func InfoMsg(text string) {
+	fmt.Printf("\033[36m>> %s\033[0m\r\n", text)
+}
+
+func SuccessMsg(text string) {
+	fmt.Printf("\033[32m>> %s\033[0m\r\n", text)
 }
 
 func CalcSize(size int, unit string) int {
@@ -33,26 +41,6 @@ func ReadBytes(file *os.File, number int) []byte {
 	return bytes
 }
 
-func StructToBytes(s interface{}) []byte {
-	buffer := bytes.Buffer{}
-	encoder := gob.NewEncoder(&buffer)
-	err := encoder.Encode(s)
-	if err != nil && err != io.EOF {
-		ErrorMsg(err.Error())
-	}
-	return buffer.Bytes()
-}
-
-func BytesToMBR(b []byte) MBR {
-	m := MBR{}
-	decoder := gob.NewDecoder(bytes.NewReader(b))
-	err := decoder.Decode(&m)
-	if err != nil && err != io.EOF {
-		ErrorMsg(err.Error())
-	}
-	return m
-}
-
 func UsedName(name string, names []string) bool {
 	var name_bytes [16]byte
 	copy(name_bytes[:], name)
@@ -62,4 +50,43 @@ func UsedName(name string, names []string) bool {
 		}
 	}
 	return false
+}
+
+func WriteMbr(file *os.File, mbr MBR, pos int64) {
+	var buffer_bytes bytes.Buffer
+	binary.Write(&buffer_bytes, binary.BigEndian, &mbr)
+
+	_, err2 := file.WriteAt(buffer_bytes.Bytes(), pos)
+
+	if err2 != nil {
+		ErrorMsg(err2.Error())
+	}
+}
+
+func WriteEbr(file *os.File, ebr EBR, pos int64)  {
+	var buffer_ebr bytes.Buffer
+	binary.Write(&buffer_ebr, binary.BigEndian, &ebr)
+
+	_, err3 := file.WriteAt(buffer_ebr.Bytes(), pos)
+
+	if err3 != nil {
+		ErrorMsg(err3.Error())
+	}
+}
+
+func ReadMbr(file *os.File) MBR {
+	// posicionarse al inicio del archivo
+	file.Seek(0, 0)
+	// crear y obtener el tamano del mbr
+	mbr := MBR{}
+	size_mbr := unsafe.Sizeof(mbr)
+	// leer del archivo y pasarlo al mbr
+	data := ReadBytes(file, int(size_mbr))
+	buffer := bytes.NewBuffer(data)
+	err := binary.Read(buffer, binary.BigEndian, &mbr)
+	if err != nil {
+		ErrorMsg(err.Error())
+	}
+
+	return mbr
 }

@@ -51,10 +51,11 @@ func removeDisk(path string) {
 				if e != nil {
 					util.ErrorMsg("No se ha podido eliminar el disco!")
 				} else {
-					fmt.Printf("> Se ha eliminado el disco: %q con éxito!\n", path)
+					msg := "Se ha eliminado el disco: \"" + path + "\" con éxito!"
+					util.SuccessMsg(msg)
 				}
 			} else if input == 2 {
-				fmt.Println("> No se eliminara el disco seleccionado.")
+				util.InfoMsg("> No se eliminara el disco seleccionado.")
 			} else {
 				util.ErrorMsg("La opción ingresada es incorrecta!")
 			}
