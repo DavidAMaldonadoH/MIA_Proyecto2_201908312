@@ -55,7 +55,7 @@ func removeDisk(path string) {
 					util.SuccessMsg(msg)
 				}
 			} else if input == 2 {
-				util.InfoMsg("> No se eliminara el disco seleccionado.")
+				util.InfoMsg("No se eliminara el disco seleccionado.")
 			} else {
 				util.ErrorMsg("La opción ingresada es incorrecta!")
 			}

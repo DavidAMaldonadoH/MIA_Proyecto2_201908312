@@ -63,7 +63,7 @@ func WriteMbr(file *os.File, mbr MBR, pos int64) {
 	}
 }
 
-func WriteEbr(file *os.File, ebr EBR, pos int64)  {
+func WriteEbr(file *os.File, ebr EBR, pos int64) {
 	var buffer_ebr bytes.Buffer
 	binary.Write(&buffer_ebr, binary.BigEndian, &ebr)
 
@@ -89,4 +89,21 @@ func ReadMbr(file *os.File) MBR {
 	}
 
 	return mbr
+}
+
+func ReadEbr(file *os.File, start int64) EBR {
+	// posicionarse en el incio de la particion extendida
+	file.Seek(start, 0)
+	// crear y obtener el tamano del ebr
+	ebr := EBR{}
+	size_ebr := unsafe.Sizeof(ebr)
+	// leer del archivo y pasarl al ebr
+	data := ReadBytes(file, int(size_ebr))
+	buffer := bytes.NewBuffer(data)
+	err := binary.Read(buffer, binary.BigEndian, &ebr)
+	if err != nil {
+		ErrorMsg(err.Error())
+	}
+
+	return ebr
 }
