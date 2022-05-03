@@ -9,7 +9,7 @@ import (
 
 var counter int = 1
 var mountedDisks map[string]int = make(map[string]int)
-var mountedPartitions []util.MountedPartition
+var MountedPartitions []util.MountedPartition
 
 type Mount struct {
 	Parameters []util.Parameter
@@ -53,20 +53,23 @@ func mountPartition(path, name string) {
 	if _, err := os.Stat(path); os.IsNotExist(err) { // si el disco no existe
 		util.ErrorMsg("No existe el disco ingresado!")
 	} else {
-		var identificador string
-		var patition_counter int = 0
-		letters := [26]string{
-			"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",
-			"l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",
-			"w", "x", "y", "z"}
-		prefix := "12"
-		_, found := mountedDisks[path]
-		if !found {
+		flag_partitions := util.AlreadyMount(name, path, MountedPartitions)
+		if !flag_partitions {
+			
+			var identificador string
+			var patition_counter int = 0
+			letters := [26]string{
+				"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",
+				"l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",
+				"w", "x", "y", "z"}
+				prefix := "12"
+				_, found := mountedDisks[path]
+				if !found {
 			mountedDisks[path] = counter
 			counter++
 		}
-
-		for _, p := range mountedPartitions {
+		
+		for _, p := range MountedPartitions {
 			if path == p.Path {
 				if p.Name != name {
 					patition_counter += 1
@@ -74,12 +77,11 @@ func mountPartition(path, name string) {
 			}
 		}
 		number, found := mountedDisks[path]
-
+		
 		if found {
 			identificador = prefix + strconv.Itoa(number) + letters[patition_counter]
 		}
-
-		fmt.Println(identificador)
+		
 		var mounted_part util.MountedPartition
 		mounted_part.Id = identificador
 		mounted_part.Name = name
@@ -91,7 +93,7 @@ func mountPartition(path, name string) {
 		}
 
 		mbr := util.ReadMbr(disk)
-
+		
 		for _, p := range mbr.Partitions {
 			var name_bytes [16]byte
 			copy(name_bytes[:], name)
@@ -119,14 +121,23 @@ func mountPartition(path, name string) {
 		}
 
 		disk.Close()
-
+		
 		if exists_part {
-			mountedPartitions = append(mountedPartitions, mounted_part)
+			MountedPartitions = append(MountedPartitions, mounted_part)
+			util.InfoMsg("Nombre de la partición: " + name)
 			util.SuccessMsg("Partición montada con éxito con id: " + identificador)
+			} else {
+				util.InfoMsg("No existe una partición con ese nombre en el disco!")
+				util.ErrorMsg("No se pudo montar la partición")
+			}
+			
+			fmt.Println("------Particiones montadas------")
+			for i, mp := range MountedPartitions {
+				fmt.Println("Partición Montada " + strconv.Itoa(i+1))
+				mp.ShowInfo()
+			}
 		} else {
-			util.InfoMsg("No existe una partición con ese nombre en el disco!")
-			util.ErrorMsg("No se pudo montar la partición")
+			util.ErrorMsg("La partición con nombre: " + name + " del disco en " + path + " ya ha sido montada!")
 		}
-
 	}
 }

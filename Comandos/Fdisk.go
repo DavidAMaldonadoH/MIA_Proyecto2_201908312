@@ -142,7 +142,7 @@ func cretePrimary(disk *os.File, used_space, part_size, index int, mbr util.MBR,
 			}
 			util.WriteMbr(disk, mbr, pos)
 
-			util.InfoMsg("Creación de partición primaria en " + path)
+			util.InfoMsg("Creación de partición primaria en " + path + " con nombre: " + name)
 			util.SuccessMsg("fdisk realizado con éxito!")
 		} else {
 			util.ErrorMsg("Ya existe una partición con ese nombre!")
@@ -178,7 +178,7 @@ func creteExtended(disk *os.File, used_space, part_size, index int, mbr util.MBR
 			}
 			util.WriteEbr(disk, ebr, pos2)
 
-			util.InfoMsg("Creación de partición extendida en " + path)
+			util.InfoMsg("Creación de partición extendida en " + path + " con nombre: " + name)
 			util.SuccessMsg("fdisk realizado con éxito!")
 		} else {
 			util.ErrorMsg("Ya existe una partición con ese nombre!")
@@ -201,7 +201,6 @@ func creteLogic(disk *os.File, part_size, index, extended_index int, mbr util.MB
 		if err != nil {
 			util.ErrorMsg(err.Error())
 		}
-		ebr.PrintInfo()
 		ebr = util.ReadEbr(disk, pos)
 	}
 
@@ -215,7 +214,6 @@ func creteLogic(disk *os.File, part_size, index, extended_index int, mbr util.MB
 				ebr.Status = '1'
 				ebr.Start = extended_part.Start + int64(used_space)
 				copy(ebr.Name[:], name)
-				ebr.PrintInfo()
 				pos, err := disk.Seek(ebr.Start, io.SeekStart)
 				if err != nil {
 					util.ErrorMsg(err.Error())
@@ -229,7 +227,7 @@ func creteLogic(disk *os.File, part_size, index, extended_index int, mbr util.MB
 				}
 
 				util.WriteEbr(disk, ebr2, pos2)
-				util.InfoMsg("Creación de partición lógica en " + path)
+				util.InfoMsg("Creación de partición lógica en " + path + " con nombre: " + name)
 				util.SuccessMsg("fdisk realizado con éxito!")
 			} else {
 				util.ErrorMsg("Ya existe una partición con ese nombre!")

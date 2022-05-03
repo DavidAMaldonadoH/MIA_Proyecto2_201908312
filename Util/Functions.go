@@ -107,3 +107,12 @@ func ReadEbr(file *os.File, start int64) EBR {
 
 	return ebr
 }
+
+func AlreadyMount(name, path string, mounted_partitions []MountedPartition) bool {
+	for _, mp := range mounted_partitions {
+		if mp.Path == path && mp.Name == name {
+			return true
+		}
+	}
+	return false
+}
