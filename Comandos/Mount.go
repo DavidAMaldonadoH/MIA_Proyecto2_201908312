@@ -20,6 +20,10 @@ func NewMount(parameters []util.Parameter) *Mount {
 	return &Mount{Parameters: parameters}
 }
 
+func GetMountedPartitions() []util.MountedPartition {
+	return MountedPartitions
+}
+
 func (mount *Mount) Execute() interface{} {
 	// parametros
 	path := ""

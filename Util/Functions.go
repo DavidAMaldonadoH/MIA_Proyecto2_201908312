@@ -116,3 +116,11 @@ func AlreadyMount(name, path string, mounted_partitions []MountedPartition) bool
 	}
 	return false
 }
+
+func FileExists(filename string) bool {
+    info, err := os.Stat(filename)
+    if os.IsNotExist(err) {
+        return false
+    }
+    return !info.IsDir()
+}
