@@ -33,7 +33,6 @@ func (rmgroup *Rmgroup) Execute() interface{} {
 func removeGroup(name string) {
 	if Is_logged_in {
 		if Current_user.Name == "root" {
-			
 			partition := Current_user.Partition
 			disk, err := os.OpenFile(partition.Path, os.O_RDWR, 0777)
 			if err != nil {
@@ -106,7 +105,7 @@ func removeGroup(name string) {
 				}
 				util.SuccessMsg("Grupo con nombre: " + name + " eliminado con éxito!")
 			} else {
-				util.ErrorMsg("No hay un grupo con ese nombre!")
+				util.ErrorMsg("No hay un grupo con ese nombre no se puede eliminar!")
 			}
 		} else {
 			util.ErrorMsg("Solo el usuario root puede crear grupos!")
