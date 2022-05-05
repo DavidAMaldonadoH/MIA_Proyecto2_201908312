@@ -2,7 +2,6 @@ package comandos
 
 import (
 	util "Proyecto2/Util"
-	"fmt"
 	"math"
 	"os"
 	"strings"
@@ -60,7 +59,7 @@ func formatPartition(id, tipo string) {
 	}
 	n := util.GetN(partition.P.Size)
 	numero_structs := math.Floor(n)
-	
+
 	if numero_structs >= 2 {
 		disk, err := os.OpenFile(partition.Path, os.O_RDWR, 0777)
 		if err != nil {
@@ -72,18 +71,18 @@ func formatPartition(id, tipo string) {
 		}
 
 		createSuperBlock(partition.P, disk, numero_structs)
-		//createBitMaps(partition.P, disk, numero_structs)
+		createBitMaps(partition.P, disk, numero_structs)
 		superb := util.ReadSuperBlock(disk, partition.P.Start)
-		fmt.Println(superb.Free_blocks_count)
-		fmt.Println(superb.Free_inodes_count)
+		// fmt.Println(superb.Free_blocks_count)
+		// fmt.Println(superb.Free_inodes_count)
 		createRoot(partition.P, disk, n, &superb)
 		pos, err := disk.Seek(partition.P.Start, 0)
 		if err != nil {
 			util.ErrorMsg(err.Error())
 		}
 		util.WriteSuperBlock(disk, superb, pos)
-		fmt.Println(superb.Free_blocks_count)
-		fmt.Println(superb.Free_inodes_count)
+		// fmt.Println(superb.Free_blocks_count)
+		// fmt.Println(superb.Free_inodes_count)
 		disk.Close()
 		util.InfoMsg("Formato de partición en " + partition.Path + " con nombre: " + partition.Name)
 		util.SuccessMsg("mkfs realizado con éxito!")
@@ -141,29 +140,21 @@ func createBitMaps(partition util.Partition, disk *os.File, n float64) {
 	bitmap_inodes := make([]byte, int(n))
 	bitmap_blocks := make([]byte, int(3*n))
 	for i := 0; i < int(n); i++ {
-		bitmap_inodes[i] = '0'
+		bitmap_inodes[i] = 0
 	}
 	for i := 0; i < 3*int(n); i++ {
-		bitmap_blocks[i] = '0'
+		bitmap_blocks[i] = 0
 	}
-	bitmap_inodes[0] = '1' // inodo carpeta '/'
-	bitmap_inodes[1] = '1' // inodo archivo 'users.txt'
-	bitmap_blocks[0] = '1' // bloque carpeta '/' 1 para carpetas
-	bitmap_blocks[0] = '2' // bloque archivo 'users.txt' 2 para archivos
+	bitmap_inodes[0] = 1 // inodo carpeta '/'
+	bitmap_inodes[1] = 1 // inodo archivo 'users.txt'
+	bitmap_blocks[0] = 1 // bloque carpeta '/' 1 para carpetas
+	bitmap_blocks[1] = 2 // bloque archivo 'users.txt' 2 para archivos
 	// escribir bitmap de inodos
 	bm_inodes_start := partition.Start + int64(unsafe.Sizeof(util.SuperBlock{}))
-	pos, err := disk.Seek(bm_inodes_start, 0)
-	if err != nil {
-		util.ErrorMsg(err.Error())
-	}
-	util.WriteBitmap(disk, bitmap_inodes, pos)
+	disk.WriteAt(bitmap_inodes, bm_inodes_start)
 	// escribir bitmap de bloques
 	bm_blocks_start := bm_inodes_start + int64(n)
-	pos2, err := disk.Seek(bm_blocks_start, 0)
-	if err != nil {
-		util.ErrorMsg(err.Error())
-	}
-	util.WriteBitmap(disk, bitmap_blocks, pos2)
+	disk.WriteAt(bitmap_blocks, bm_blocks_start)
 }
 
 func createRoot(partition util.Partition, disk *os.File, n float64, super_block *util.SuperBlock) {
@@ -186,38 +177,43 @@ func createRoot(partition util.Partition, disk *os.File, n float64, super_block 
 	carpeta_root.Block[0] = 0 // apunta al bloque de carpeta
 	carpeta_root.Tipo = '0'
 	carpeta_root.Perm = 664
-
 	// bloque carpeta
 	var carpeta util.Folder
 	var contenido util.Content
+	// bloque carpeta '/'
+	copy(contenido.Name[:], "/") // nombre de la carpeta
 	contenido.Inodo = 0          // apuntador de inodo
-	copy(contenido.Name[:], "/") // nombre de la carpeta actual
 	carpeta.B_content[0] = contenido
-	copy(contenido.Name[:], "..") // nombre de la carpeta padre
-	carpeta.B_content[1] = contenido
+	// bloque archivo users.txt
+	copy(contenido.Name[:], "users.txt") // nombre del archivo
 	contenido.Inodo = 1                  // apuntador de inodo
-	copy(contenido.Name[:], "users.txt") // nombre del archivo actual
+	carpeta.B_content[1] = contenido
+	// ultimos dos bloques vacios
+	copy(contenido.Name[:], "")
+	contenido.Inodo = -1
 	carpeta.B_content[2] = contenido
 	contenido.Inodo = -1
 	copy(contenido.Name[:], "")
 	carpeta.B_content[3] = contenido
-
+	// escribir inodo carpeta '/'
 	pos, err := disk.Seek(super_block.Inode_start, 0)
 	if err != nil {
 		util.ErrorMsg(err.Error())
 	}
 	util.WriteInode(disk, carpeta_root, pos)
-	super_block.Free_inodes_count -= 1
+	super_block.Free_inodes_count -= 1 // disminuir la cantidad de indodos disponibles
+	// escribir bloque de carpeta '/'
 	pos2, err := disk.Seek(super_block.Block_start, 0)
 	if err != nil {
 		util.ErrorMsg(err.Error())
 	}
 	util.WriteBlock(disk, carpeta, pos2)
-	super_block.Free_blocks_count -= 1
+	super_block.Free_blocks_count -= 1 // disminuimos la cantidad de bloques disponibles
 	// archivo users.txt
 	data_users := "1,G,root\n1,U,root,root,123\n"
 	var bytes_data_users [64]byte
 	copy(bytes_data_users[:], data_users)
+	// inodo de archivo users.txt
 	var users_file util.Inode
 	users_file.Uid = 1
 	users_file.Gid = 1

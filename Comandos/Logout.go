@@ -2,7 +2,6 @@ package comandos
 
 import (
 	util "Proyecto2/Util"
-	"fmt"
 )
 
 type Logout struct {
@@ -14,6 +13,13 @@ func NewLogout() *Logout {
 }
 
 func (Logout *Logout) Execute() interface{} {
-	fmt.Println("Comando Logout")
+	if Is_logged_in {
+		Current_user.Name = ""
+		Current_user.Password = ""
+		Is_logged_in = false
+		util.SuccessMsg("Se ha cerrado sesión éxitosamente!")
+	} else {
+		util.ErrorMsg("No hay una sesión abierta, no se puede realizar logout!")
+	}
 	return nil
 }
