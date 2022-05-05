@@ -115,6 +115,7 @@ func reportar(path, name, id, ruta string) {
 	        return
 	    }
 	    fmt.Print(string(stdout))
+		util.SuccessMsg("Reporte disk creado con éxito!")
 	} else if strings.ToLower(name) == "tree" {
 
 	} else if strings.ToLower(name) == "file" {
@@ -200,3 +201,4 @@ func diskRep(mbr util.MBR, disk *os.File) {
 	dot_file.WriteString("\n\t\t</TR>\n\t</TABLE>>\n\t]\n}")
 	dot_file.Close()
 }
+

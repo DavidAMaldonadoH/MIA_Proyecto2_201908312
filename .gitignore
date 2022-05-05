@@ -4,3 +4,4 @@ go.mod
 *.dot
 *.sh
 *.svg
+*.script

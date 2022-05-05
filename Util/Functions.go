@@ -74,6 +74,62 @@ func WriteEbr(file *os.File, ebr EBR, pos int64) {
 	}
 }
 
+func WriteSuperBlock(file *os.File, sb SuperBlock, pos int64) {
+	var buffer_bytes bytes.Buffer
+	binary.Write(&buffer_bytes, binary.BigEndian, &sb)
+
+	_, err2 := file.WriteAt(buffer_bytes.Bytes(), pos)
+
+	if err2 != nil {
+		ErrorMsg(err2.Error())
+	}
+}
+
+func WriteInode(file *os.File, inode Inode, pos int64) {
+	var buffer_bytes bytes.Buffer
+	binary.Write(&buffer_bytes, binary.BigEndian, &inode)
+
+	_, err2 := file.WriteAt(buffer_bytes.Bytes(), pos)
+
+	if err2 != nil {
+		ErrorMsg(err2.Error())
+	}
+}
+
+func WriteBlock(file *os.File, block Folder, pos int64) {
+	var buffer_bytes bytes.Buffer
+	binary.Write(&buffer_bytes, binary.BigEndian, &block)
+
+	_, err2 := file.WriteAt(buffer_bytes.Bytes(), pos)
+
+	if err2 != nil {
+		ErrorMsg(err2.Error())
+	}
+}
+
+func WriteFile(file *os.File, file_block File, pos int64) {
+	var buffer_bytes bytes.Buffer
+	binary.Write(&buffer_bytes, binary.BigEndian, &file_block)
+
+	_, err2 := file.WriteAt(buffer_bytes.Bytes(), pos)
+
+	if err2 != nil {
+		ErrorMsg(err2.Error())
+	}
+}
+
+func WriteBitmap(file *os.File, bitmap []byte, pos int64) {
+	var buffer_bytes bytes.Buffer
+	binary.Write(&buffer_bytes, binary.BigEndian, &bitmap)
+
+	_, err2 := file.WriteAt(buffer_bytes.Bytes(), pos)
+
+	if err2 != nil {
+		ErrorMsg(err2.Error())
+	}
+}
+
+
 func ReadMbr(file *os.File) MBR {
 	// posicionarse al inicio del archivo
 	file.Seek(0, 0)
@@ -108,6 +164,70 @@ func ReadEbr(file *os.File, start int64) EBR {
 	return ebr
 }
 
+func ReadSuperBlock(file *os.File, start int64) SuperBlock {
+	// posicionarse en el incio de la particion 
+	// crear y obtener el tamano del super_block
+	super_block := SuperBlock{}
+	size_sb := unsafe.Sizeof(super_block)
+	// leer del archivo y pasarlo a super bloque
+	data := ReadBytes(file, int(size_sb))
+	buffer := bytes.NewBuffer(data)
+	err := binary.Read(buffer, binary.BigEndian, &super_block)
+	if err != nil {
+		ErrorMsg(err.Error())
+	}
+
+	return super_block
+}
+
+func ReadInode(file *os.File, start int64) Inode {
+	// posicionarse en el incio de la particion 
+	// crear y obtener el tamano del inode
+	inode := Inode{}
+	size_inode := unsafe.Sizeof(inode)
+	// leer del archivo y pasarlo a inodo
+	data := ReadBytes(file, int(size_inode))
+	buffer := bytes.NewBuffer(data)
+	err := binary.Read(buffer, binary.BigEndian, &inode)
+	if err != nil {
+		ErrorMsg(err.Error())
+	}
+
+	return inode
+}
+
+func ReadBlock(file *os.File, start int64) Folder {
+	// posicionarse en el incio de la particion 
+	// crear y obtener el tamano del bloque de carpeta
+	folder := Folder{}
+	size_folder := unsafe.Sizeof(folder)
+	// leer del archivo y pasarlo a bloque de carpeta
+	data := ReadBytes(file, int(size_folder))
+	buffer := bytes.NewBuffer(data)
+	err := binary.Read(buffer, binary.BigEndian, &folder)
+	if err != nil {
+		ErrorMsg(err.Error())
+	}
+
+	return folder
+}
+
+func ReadFile(file *os.File, start int64) File {
+	// posicionarse en el incio de la particion 
+	// crear y obtener el tamano del bloque de archivo
+	file_block := File{}
+	size_file := unsafe.Sizeof(file_block)
+	// leer del archivo y pasarlo a bloque de archivo
+	data := ReadBytes(file, int(size_file))
+	buffer := bytes.NewBuffer(data)
+	err := binary.Read(buffer, binary.BigEndian, &file_block)
+	if err != nil {
+		ErrorMsg(err.Error())
+	}
+
+	return file_block
+}
+
 func AlreadyMount(name, path string, mounted_partitions []MountedPartition) bool {
 	for _, mp := range mounted_partitions {
 		if mp.Path == path && mp.Name == name {
@@ -123,4 +243,13 @@ func FileExists(filename string) bool {
         return false
     }
     return !info.IsDir()
+}
+
+func GetN(part_size int64) float64 {
+	var n float64
+	size_sb := int(unsafe.Sizeof(SuperBlock{}))
+	size_inode := int(unsafe.Sizeof(Inode{}))
+	size_block := int(unsafe.Sizeof(Folder{}))
+	n = float64(int(part_size)-size_sb) / float64(4+size_inode+(3*size_block))
+	return n
 }

@@ -3,6 +3,8 @@ package comandos
 import (
 	util "Proyecto2/Util"
 	"fmt"
+	"os"
+	"strings"
 )
 
 type Login struct {
@@ -47,7 +49,30 @@ func (login *Login) Execute() interface{} {
 }
 
 func log(usuario, password, id string) {
-	fmt.Println(usuario)
-	fmt.Println(password)
-	fmt.Println(id)
+	id = strings.ToLower(id)
+	partitions := GetMountedPartitions()
+	var partition util.MountedPartition
+	for _, p := range partitions {
+		if id == p.Id {
+			partition = p
+			break
+		}
+	}
+	disk, err := os.OpenFile(partition.Path, os.O_RDWR, 0777)
+	if err != nil {
+		util.ErrorMsg(err.Error())
+	}
+	pos, err := disk.Seek(partition.P.Start, 0)
+	if err != nil {
+		util.ErrorMsg(err.Error())
+	}
+	super_block := util.ReadSuperBlock(disk, pos)
+
+	pos2, err := disk.Seek(super_block.Block_start+64, 0)
+	if err != nil {
+		util.ErrorMsg(err.Error())
+	}
+	file_block := util.ReadFile(disk, pos2)
+	content_file := strings.Split(string(file_block.B_content[:]), "\n")
+	fmt.Println(len(content_file))
 }
