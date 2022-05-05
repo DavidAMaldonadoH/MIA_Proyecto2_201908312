@@ -14,6 +14,7 @@ var Is_logged_in bool = false
 type User struct {
 	Name string
 	Password string
+	Partition util.MountedPartition
 }
 
 type Login struct {
@@ -116,10 +117,12 @@ func log(usuario, password, id string) {
 			if data[3] == usuario && data[4] == password {
 				Current_user.Name = usuario
 				Current_user.Password = password
+				Current_user.Partition = partition
 				Is_logged_in = true
 				if data[0] == "0" {
 					Current_user.Name = ""
 					Current_user.Password = ""
+					Current_user.Partition = util.MountedPartition{}
 					Is_logged_in = false
 					util.InfoMsg("El usuario " + usuario + " con la contraseña ingresada ya a sido eliminado!")
 				}

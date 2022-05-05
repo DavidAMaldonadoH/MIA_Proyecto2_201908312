@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"os"
 	"unsafe"
 )
@@ -252,4 +253,30 @@ func GetN(part_size int64) float64 {
 	size_block := int(unsafe.Sizeof(Folder{}))
 	n = float64(int(part_size)-size_sb) / float64(4+size_inode+(3*size_block))
 	return n
+}
+
+func CreateFileBlock(partition Partition, super_block *SuperBlock, inode *Inode, disk *os.File) int64 {
+	index_block := -1
+	for index, b := range inode.Block {
+		if b == -1 {
+			index_block = index
+			break
+		}
+	}
+	n := GetN(partition.Size)
+	disk.Seek(super_block.Bm_block_start, 0)
+	bitmap_blocks := ReadBytes(disk, 3*int(math.Floor(n)))
+	var index_bit int
+	for i, b := range bitmap_blocks {
+		if b == 0 {
+			index_bit = i
+			break
+		}
+	}
+	bitmap_blocks[index_bit] = 2
+	pos, _ := disk.Seek(super_block.Bm_block_start, 0)
+	WriteBitmap(disk, bitmap_blocks, pos)
+	super_block.Blocks_count += -1
+	inode.Block[index_block] = int64(index_bit)
+	return int64(index_bit)
 }
