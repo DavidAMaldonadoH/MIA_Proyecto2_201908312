@@ -108,7 +108,7 @@ func removeGroup(name string) {
 				util.ErrorMsg("No hay un grupo con ese nombre no se puede eliminar!")
 			}
 		} else {
-			util.ErrorMsg("Solo el usuario root puede crear grupos!")
+			util.ErrorMsg("Solo el usuario root puede eliminar grupos!")
 		}
 	} else {
 		util.ErrorMsg("Se necesita que una sesión este iniciada para poder eliminar un grupo!")

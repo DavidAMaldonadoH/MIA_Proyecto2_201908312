@@ -12,8 +12,10 @@ var Current_user User = User{Name: "", Password: ""}
 var Is_logged_in bool = false
 
 type User struct {
-	Name string
-	Password string
+	Name      string
+	Password  string
+	Gid       string
+	Uid       string
 	Partition util.MountedPartition
 }
 
@@ -106,10 +108,13 @@ func log(usuario, password, id string) {
 		groups_users := strings.Split(content_file_clean, "\n")
 		groups_users = groups_users[:len(groups_users)-1]
 		users := make([]string, 0)
+		groups := make([]string, 0)
 		for _, v := range groups_users {
 			info := strings.Split(v, ",")
 			if info[1] == "U" {
-				users =append(users, v)
+				users = append(users, v)
+			} else {
+				groups = append(groups, v)
 			}
 		}
 		for _, u := range users {
@@ -118,6 +123,14 @@ func log(usuario, password, id string) {
 				Current_user.Name = usuario
 				Current_user.Password = password
 				Current_user.Partition = partition
+				Current_user.Uid = data[0]
+				for _, g := range groups {
+					info := strings.Split(g, ",")
+					if info[2] == data[2] {
+						Current_user.Gid = info[0]
+						break
+					}
+				}
 				Is_logged_in = true
 				if data[0] == "0" {
 					Current_user.Name = ""

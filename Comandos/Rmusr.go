@@ -110,7 +110,7 @@ func removeUser(usuario string) {
 				util.ErrorMsg("No hay un usuario con ese nombre no se puede eliminar!")
 			}
 		} else {
-			util.ErrorMsg("Solo el usuario root puede crear usuarios!")
+			util.ErrorMsg("Solo el usuario root puede eliminar usuarios!")
 		}
 	} else {
 		util.ErrorMsg("Se necesita que una sesión este iniciada para poder eliminar un usuario!")

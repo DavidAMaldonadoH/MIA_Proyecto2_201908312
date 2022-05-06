@@ -184,14 +184,14 @@ func createRoot(partition util.Partition, disk *os.File, n float64, super_block 
 	copy(contenido.Name[:], "/") // nombre de la carpeta
 	contenido.Inodo = 0          // apuntador de inodo
 	carpeta.B_content[0] = contenido
+	copy(contenido.Name[:], "..")
+	contenido.Inodo = 0
+	carpeta.B_content[1] = contenido
 	// bloque archivo users.txt
 	copy(contenido.Name[:], "users.txt") // nombre del archivo
 	contenido.Inodo = 1                  // apuntador de inodo
-	carpeta.B_content[1] = contenido
-	// ultimos dos bloques vacios
-	copy(contenido.Name[:], "")
-	contenido.Inodo = -1
 	carpeta.B_content[2] = contenido
+	// ultimos dos bloques vacios
 	contenido.Inodo = -1
 	copy(contenido.Name[:], "")
 	carpeta.B_content[3] = contenido

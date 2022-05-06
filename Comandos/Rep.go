@@ -134,7 +134,12 @@ func reportar(path, name, id, ruta string) {
 		fmt.Print(string(stdout))
 		util.SuccessMsg("Reporte tree creado con éxito!")
 	} else if strings.ToLower(name) == "file" {
-
+		if Is_logged_in {
+			fileRep(disk, path, ruta)
+			util.SuccessMsg("Reporte file creado con éxito!")
+		} else {
+			util.ErrorMsg("Necesita que una sesión este iniciada para crear el reporte!")
+		}
 	} else {
 		util.ErrorMsg(name + " no es un tipo de reporte válido!")
 	}
@@ -261,7 +266,7 @@ func treeRep(disk *os.File) {
 					dot_file.WriteString("\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#ffbf69\">" + ap + "</td>")
 					dot_file.WriteString("\n\t\t\t</tr>\n\t\t</table>\n\t> ]")
 					dot_file.WriteString("\n\t" + node1 + "->" + node2)
-					if j > 0 {
+					if j > 1 {
 						dot_file.WriteString("\n\t" + node2 + "->" + "inode" + ap)
 					}
 				}
@@ -297,14 +302,6 @@ func treeRep(disk *os.File) {
 				atime := string(b)
 				b = bytes.Trim(inode.Mtime[:], "\x00")
 				mtime := string(b)
-				var used_aps int
-				for i, ap := range inode.Block {
-					if ap == -1 {
-						used_aps = i
-						break
-					}
-				}
-				used_aps_string := strconv.Itoa(used_aps)
 				dot_file.WriteString("\n\t" + node1 + " [label = <\n\t\t<table>\n\t\t\t<tr><td colspan=\"2\" bgcolor=\"#2ec4b6\">Inodo</td>\n\t\t\t</tr>")
 				dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">UID</td>")
 				dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">" + uid + "</td>\n\t\t\t</tr>")
@@ -318,8 +315,17 @@ func treeRep(disk *os.File) {
 				dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">" + ctime + "</td>\n\t\t\t</tr>")
 				dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">mtime</td>")
 				dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">" + mtime + "</td>\n\t\t\t</tr>")
-				dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">Block</td>")
-				dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">" + used_aps_string + "</td>\n\t\t\t</tr>")
+				for j, ap := range inode.Block {
+					if ap == -1 {
+						break
+					} else {
+						index_ap := strconv.Itoa(j)
+						valor_ap := strconv.Itoa(int(ap))
+						dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">ap" + index_ap + "</td>")
+						dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">" + valor_ap + "</td>\n\t\t\t</tr>")
+					}
+				}
+
 				if bit == 1 {
 					dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">Type</td>")
 					dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">0</td>\n\t\t\t</tr>")
@@ -342,5 +348,77 @@ func treeRep(disk *os.File) {
 		}
 		dot_file.WriteString("\n}")
 		dot_file.Close()
+	} else {
+		util.ErrorMsg("Necesita que una sesión este iniciada para crear el reporte!")
 	}
+}
+
+func fileRep(disk *os.File, path, ruta string) {
+	archivo, err := os.Create(path)
+	if err != nil {
+		util.ErrorMsg(err.Error())
+	}
+	// cuerpo del archivo
+	dir := strings.Split(ruta, "/")
+	dir = dir[1:]
+	partition := Current_user.Partition
+
+	pos, err := disk.Seek(partition.P.Start, 0)
+	if err != nil {
+		util.ErrorMsg(err.Error())
+	}
+
+	super_block := util.ReadSuperBlock(disk, pos)
+	pos2, err := disk.Seek(super_block.Inode_start, 0)
+	if err != nil {
+		util.ErrorMsg(err.Error())
+	}
+
+	inode0 := util.ReadInode(disk, pos2)
+	for _, ap := range inode0.Block {
+		if ap == -1 {
+			break
+		} else {
+			pos3, err := disk.Seek(super_block.Block_start+(ap*64), 0)
+			if err != nil {
+				util.ErrorMsg(err.Error())
+			}
+			root_folder := util.ReadBlock(disk, pos3)
+			if len(dir) == 1 {
+				for _, cont := range root_folder.B_content {
+					if cont.Inodo == -1 {
+						break
+					}
+					b := bytes.Trim(cont.Name[:], "\x00")
+					nombre := string(b)
+					fmt.Println(dir[0])
+					fmt.Println(nombre)
+					if nombre == dir[0] {
+						pos4, err := disk.Seek(super_block.Inode_start+(int64(cont.Inodo)*super_block.Inode_size), 0)
+						if err != nil {
+							util.ErrorMsg(err.Error())
+						}
+						content_file := make([]byte, 0)
+						inode_aux := util.ReadInode(disk, pos4)
+						for _, ap2 := range inode_aux.Block {
+							if ap2 == -1 {
+								break
+							} else {
+								pos5, err := disk.Seek(super_block.Block_start+ap2*64, 0)
+								if err != nil {
+									util.ErrorMsg(err.Error())
+								}
+								content := util.ReadFile(disk, pos5)
+								content_file = append(content_file, content.B_content[:]...)
+							}
+						}
+						b2 := bytes.Trim(content_file[:], "\x00")
+						content_file_clean := string(b2)
+						archivo.WriteString(content_file_clean)
+					}
+				}
+			} // else por si es una carpeta
+		}
+	}
+	archivo.Close()
 }
