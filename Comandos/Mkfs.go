@@ -146,7 +146,7 @@ func createBitMaps(partition util.Partition, disk *os.File, n float64) {
 		bitmap_blocks[i] = 0
 	}
 	bitmap_inodes[0] = 1 // inodo carpeta '/'
-	bitmap_inodes[1] = 1 // inodo archivo 'users.txt'
+	bitmap_inodes[1] = 2 // inodo archivo 'users.txt'
 	bitmap_blocks[0] = 1 // bloque carpeta '/' 1 para carpetas
 	bitmap_blocks[1] = 2 // bloque archivo 'users.txt' 2 para archivos
 	// escribir bitmap de inodos

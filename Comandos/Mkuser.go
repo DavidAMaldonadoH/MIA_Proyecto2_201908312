@@ -121,6 +121,7 @@ func makeUser(usuario, pwd, grp string) {
 								index_aux = index
 								break
 							} else {
+								inode.Size = int64(len(content_file_clean))
 								if len(content_file_clean)%64 != 0 {
 									for i := 0; i < len(content_file_clean)%64; i++ {
 										content_file_clean += "\x00"

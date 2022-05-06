@@ -4,6 +4,7 @@ import (
 	util "Proyecto2/Util"
 	"bytes"
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -110,20 +111,33 @@ func reportar(path, name, id, ruta string) {
 		arg3 := "-o"
 		cmd := exec.Command(app, arg0, arg1, arg2, arg3, path)
 		stdout, err := cmd.Output()
-	    if err != nil {
-	        util.ErrorMsg(err.Error())
-	        return
-	    }
-	    fmt.Print(string(stdout))
+		if err != nil {
+			util.ErrorMsg(err.Error())
+			return
+		}
+		fmt.Print(string(stdout))
 		util.SuccessMsg("Reporte disk creado con éxito!")
 	} else if strings.ToLower(name) == "tree" {
-
+		treeRep(disk)
+		ext1 := filepath.Ext(path)
+		app := "dot"
+		arg0 := "-Nfontname=Arial"
+		arg1 := "-T" + strings.Trim(ext1, ".")
+		arg2 := "reportes.dot"
+		arg3 := "-o"
+		cmd := exec.Command(app, arg0, arg1, arg2, arg3, path)
+		stdout, err := cmd.Output()
+		if err != nil {
+			util.ErrorMsg(err.Error())
+			return
+		}
+		fmt.Print(string(stdout))
+		util.SuccessMsg("Reporte tree creado con éxito!")
 	} else if strings.ToLower(name) == "file" {
 
 	} else {
 		util.ErrorMsg(name + " no es un tipo de reporte válido!")
 	}
-
 }
 
 func diskRep(mbr util.MBR, disk *os.File) {
@@ -202,3 +216,131 @@ func diskRep(mbr util.MBR, disk *os.File) {
 	dot_file.Close()
 }
 
+func treeRep(disk *os.File) {
+	if Is_logged_in {
+		dot_file, err := os.OpenFile("reportes.dot", os.O_RDWR, 0777)
+		if err != nil {
+			util.ErrorMsg(err.Error())
+		}
+		// cuerpo del archivo
+		partition := Current_user.Partition
+		pos, err := disk.Seek(partition.P.Start, 0)
+		if err != nil {
+			util.ErrorMsg(err.Error())
+		}
+		super_block := util.ReadSuperBlock(disk, pos)
+		n := util.GetN(partition.P.Size)
+		disk.Seek(super_block.Bm_block_start, 0)
+		bitmap_blocks := util.ReadBytes(disk, 3*int(math.Floor(n)))
+		// cabecera del archivo dot
+		dot_file.WriteString("digraph G {\n\tlabel=\"Reporte Tree " + Current_user.Partition.Id + "\"\n")
+		dot_file.WriteString("\tfontname=Arial\n\tlabelloc=t\n\trankdir=LR\n\tbgcolor=\"#edf2f4\"\n\tfontsize=24")
+		dot_file.WriteString("\n\tnode [ shape=none fontname=Arial]")
+		for i, bit := range bitmap_blocks {
+			node1 := fmt.Sprintf("bloque%d", i)
+			pos2, err := disk.Seek(super_block.Block_start+(int64(i)*64), 0)
+			if err != nil {
+				util.ErrorMsg(err.Error())
+			}
+			if bit == 1 {
+				folder_block := util.ReadBlock(disk, pos2)
+				dot_file.WriteString("\n\t" + node1 + "[label=\"Bloque Carpeta\" shape=rectangle fillcolor=\"#ff9f1c\" style=filled]")
+				for j, content := range folder_block.B_content {
+					if content.Inodo == -1 {
+						break
+					}
+					node2 := fmt.Sprintf("bloque%d%d", i, j)
+					dot_file.WriteString("\n\t" + node2 + "[ label = <\n\t\t<table>\n\t\t\t<tr>")
+					dot_file.WriteString("\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#ffbf69\">Nombre</td>")
+					b := bytes.Trim(content.Name[:], "\x00")
+					nombre := string(b)
+					dot_file.WriteString("\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#ffbf69\">" + nombre + "</td>")
+					dot_file.WriteString("\n\t\t\t</tr>\n\t\t\t<tr>")
+					dot_file.WriteString("\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#ffbf69\">Apuntador</td>")
+					ap := strconv.Itoa(int(content.Inodo))
+					dot_file.WriteString("\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#ffbf69\">" + ap + "</td>")
+					dot_file.WriteString("\n\t\t\t</tr>\n\t\t</table>\n\t> ]")
+					dot_file.WriteString("\n\t" + node1 + "->" + node2)
+					if j > 0 {
+						dot_file.WriteString("\n\t" + node2 + "->" + "inode" + ap)
+					}
+				}
+			} else if bit == 2 {
+				file_block := util.ReadFile(disk, pos2)
+				b := bytes.Trim(file_block.B_content[:], "\x00")
+				contenido := string(b)
+				contenido2 := strings.ReplaceAll(contenido, "\n", "\\n")
+				dot_file.WriteString("\n\t" + node1 + "[label=\"" + contenido2 + "\" shape=rectangle fillcolor=\"#ff9f1c\" style=filled]")
+			} else {
+				break
+			}
+		}
+		disk.Seek(super_block.Bm_inode_start, 0)
+		bitmap_inodes := util.ReadBytes(disk, int(math.Floor(n)))
+		for i, bit := range bitmap_inodes {
+			if bit == 0 {
+				break
+			} else {
+				node1 := fmt.Sprintf("inode%d", i)
+				pos3, err := disk.Seek(super_block.Inode_start+(int64(i)*super_block.Inode_size), 0)
+				if err != nil {
+					util.ErrorMsg(err.Error())
+				}
+				inode := util.ReadInode(disk, pos3)
+				gid := strconv.Itoa(int(inode.Gid))
+				uid := strconv.Itoa(int(inode.Uid))
+				size := strconv.Itoa(int(inode.Size))
+				perm := strconv.Itoa(int(inode.Perm))
+				b := bytes.Trim(inode.Ctime[:], "\x00")
+				ctime := string(b)
+				b = bytes.Trim(inode.Atime[:], "\x00")
+				atime := string(b)
+				b = bytes.Trim(inode.Mtime[:], "\x00")
+				mtime := string(b)
+				var used_aps int
+				for i, ap := range inode.Block {
+					if ap == -1 {
+						used_aps = i
+						break
+					}
+				}
+				used_aps_string := strconv.Itoa(used_aps)
+				dot_file.WriteString("\n\t" + node1 + " [label = <\n\t\t<table>\n\t\t\t<tr><td colspan=\"2\" bgcolor=\"#2ec4b6\">Inodo</td>\n\t\t\t</tr>")
+				dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">UID</td>")
+				dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">" + uid + "</td>\n\t\t\t</tr>")
+				dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">GID</td>")
+				dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">" + gid + "</td>\n\t\t\t</tr>")
+				dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">Size</td>")
+				dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">" + size + "</td>\n\t\t\t</tr>")
+				dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">atime</td>")
+				dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">" + atime + "</td>\n\t\t\t</tr>")
+				dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">ctime</td>")
+				dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">" + ctime + "</td>\n\t\t\t</tr>")
+				dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">mtime</td>")
+				dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">" + mtime + "</td>\n\t\t\t</tr>")
+				dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">Block</td>")
+				dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">" + used_aps_string + "</td>\n\t\t\t</tr>")
+				if bit == 1 {
+					dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">Type</td>")
+					dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">0</td>\n\t\t\t</tr>")
+				} else {
+					dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">Type</td>")
+					dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">1</td>\n\t\t\t</tr>")
+				}
+				dot_file.WriteString("\n\t\t\t<tr>\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">Perm</td>")
+				dot_file.WriteString("\n\t\t\t<td colspan=\"1\" bgcolor=\"#cbf3f0\">" + perm + "</td>\n\t\t\t</tr>")
+				dot_file.WriteString("\n\t\t</table>\n\t> ]")
+				for _, ap := range inode.Block {
+					if ap == -1 {
+						break
+					} else {
+						valor := strconv.Itoa(int(ap))
+						dot_file.WriteString("\n" + node1 + "->" + "bloque" + valor)
+					}
+				}
+			}
+		}
+		dot_file.WriteString("\n}")
+		dot_file.Close()
+	}
+}
