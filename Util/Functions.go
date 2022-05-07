@@ -280,3 +280,28 @@ func CreateFileBlock(partition Partition, super_block *SuperBlock, inode *Inode,
 	inode.Block[index_block] = int64(index_bit)
 	return int64(index_bit)
 }
+
+func CreateFolderBlock(partition Partition, super_block *SuperBlock, disk *os.File) int64 {
+	// index_block := -1
+	// for index, b := range inode.Block {
+	// 	if b == -1 {
+	// 		index_block = index
+	// 		break
+	// 	}
+	// }
+	n := GetN(partition.Size)
+	disk.Seek(super_block.Bm_block_start, 0)
+	bitmap_blocks := ReadBytes(disk, 3*int(math.Floor(n)))
+	var index_bit int
+	for i, b := range bitmap_blocks {
+		if b == 0 {
+			index_bit = i
+			break
+		}
+	}
+	bitmap_blocks[index_bit] = 1
+	pos, _ := disk.Seek(super_block.Bm_block_start, 0)
+	WriteBitmap(disk, bitmap_blocks, pos)
+	super_block.Blocks_count += -1
+	return int64(index_bit)
+}

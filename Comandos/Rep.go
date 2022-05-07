@@ -266,8 +266,10 @@ func treeRep(disk *os.File) {
 					dot_file.WriteString("\n\t\t\t\t<td colspan=\"1\" bgcolor=\"#ffbf69\">" + ap + "</td>")
 					dot_file.WriteString("\n\t\t\t</tr>\n\t\t</table>\n\t> ]")
 					dot_file.WriteString("\n\t" + node1 + "->" + node2)
-					if j > 1 {
-						dot_file.WriteString("\n\t" + node2 + "->" + "inode" + ap)
+					if node2 != "bloque00" {
+						if node2 != "bloque01" {
+							dot_file.WriteString("\n\t" + node2 + "->" + "inode" + ap)
+						}
 					}
 				}
 			} else if bit == 2 {
@@ -391,8 +393,6 @@ func fileRep(disk *os.File, path, ruta string) {
 					}
 					b := bytes.Trim(cont.Name[:], "\x00")
 					nombre := string(b)
-					fmt.Println(dir[0])
-					fmt.Println(nombre)
 					if nombre == dir[0] {
 						pos4, err := disk.Seek(super_block.Inode_start+(int64(cont.Inodo)*super_block.Inode_size), 0)
 						if err != nil {
